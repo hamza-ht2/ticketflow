@@ -19,7 +19,8 @@
 
 ## Overview
 - **Port:** 8083
-- **Database:** H2 in memory (recreated on every start)
+- **Database:** PostgreSQL, database `booking` (started by `infra/docker-compose.yml`). Data survives restarts.
+  `BookingApiTest` runs against a real PostgreSQL started by Testcontainers (Docker required)
 - **Depends on:** `event-service` (through Eureka)
 
 | Method | Path | Description |
@@ -46,6 +47,9 @@ Retries, circuit breaker and fallbacks are the subject of the resilience step: t
 
 ## Run
 ```bash
+# 0. PostgreSQL (creates the event and booking databases the first time)
+docker compose -f infra/docker-compose.yml up -d postgres
+
 # 1. an event, published (needs event-service on 8082)
 curl -X POST localhost:8082/api/events -H 'Content-Type: application/json' \
   -d '{"title":"Jazz night","description":"Live","venue":"Casablanca","startsAt":"2030-01-01T20:00:00Z","price":150,"capacity":3}'
@@ -116,8 +120,8 @@ curl -i -X POST localhost:8083/api/bookings -H 'Content-Type: application/json' 
 ```
 Expected: **503** "The event service is temporarily unavailable, please retry". The connection is refused, so the
 answer is almost immediate; a service that is up but too slow is cut off after the 3 s read timeout
-(`EventClientContractTest` checks this). Restart `event-service` and booking works again. The H2 database of
-`event-service` is in memory: its events must be created again.
+(`EventClientContractTest` checks this). Restart `event-service` and booking works again. The events live in
+`event-service`'s PostgreSQL database, so they are still there after the restart.
 
 **6. Through Eureka and the gateway (optional)**
 

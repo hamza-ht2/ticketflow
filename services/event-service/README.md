@@ -12,7 +12,8 @@ It also shows a small **life cycle** (state machine) enforced by the domain obje
 
 ## Overview
 - **Port:** 8082
-- **Database:** H2 in-memory (recreated on every start)
+- **Database:** PostgreSQL, database `event` (started by `infra/docker-compose.yml`). Data survives restarts.
+  Tests use an in-memory H2 instead, so they need no Docker
 - **Depends on:** `discovery-server` (8761), only to register itself; the API works without it
 
 | Method | Path | Description |
@@ -58,7 +59,11 @@ It gets `config-repo/application.yml`; add `config-repo/event-service.yml` for s
 The service still starts without the Config Server (`optional:`).
 
 ## Run locally
-Optional: start the registry first (`./mvnw -pl services/discovery-server spring-boot:run`).
+Start PostgreSQL first (it creates the `event` and `booking` databases the first time):
+
+    docker compose -f infra/docker-compose.yml up -d postgres
+
+Optional: start the registry (`./mvnw -pl services/discovery-server spring-boot:run`) too.
 
     ./mvnw -pl services/event-service spring-boot:run
 
@@ -84,7 +89,12 @@ The gateway discovered `event-service` on its own and created the route `/event-
 ## Run the tests
     ./mvnw -pl services/event-service test
 
-Tests run with `eureka.client.enabled=false`, so no registry is needed.
+Tests run with an in-memory H2 and `eureka.client.enabled=false`, so neither Docker nor a registry is needed.
+
+## Persistence check
+Create an event, stop the service (Ctrl+C), start it again and call `GET /api/events/1`: the event is still there,
+because it lives in PostgreSQL (volume `postgres-data`). `docker compose -f infra/docker-compose.yml down -v`
+deletes the volume, and the data with it.
 
 ## Exercise
 1. Start the three services and open http://localhost:8761. Which names appear? Call
