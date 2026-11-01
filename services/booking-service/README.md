@@ -16,6 +16,8 @@
   `UPDATE ... WHERE held + :q <= :capacity`**. Counting bookings and then inserting would be a race (two requests
   see one free seat). `BookingApiTest` fires 8 concurrent requests at 3 seats and expects exactly 3 successes.
 - **Remote call before the transaction**: a slow service must not hold a database connection.
+- **Circuit breaker (Resilience4J)**: when `event-service` keeps failing, calls to it are cut for a while instead of
+  piling up. Booking answers **503 at once** and `event-service` gets time to recover (see "Resilience" below).
 
 ## Overview
 - **Port:** 8083
@@ -43,7 +45,34 @@ Errors (RFC 9457): 400 invalid quantity / customer / missing event, 404 unknown 
 ## Calling event-service
 `EVENT_SERVICE_URL` overrides the Eureka name: `EVENT_SERVICE_URL=http://localhost:8082` runs booking with only
 `event-service` started (no Eureka needed). Leave it empty to use the name.
-Retries, circuit breaker and fallbacks are the subject of the resilience step: today a failure is just a clean 503.
+A failure of `event-service` is a clean **503**, and a circuit breaker stops us from calling it while it is down.
+
+## Resilience
+The Feign client goes through a **Resilience4J circuit breaker** (`spring-cloud-starter-circuitbreaker-resilience4j`,
+switched on by `spring.cloud.openfeign.circuitbreaker.enabled=true` in `booking-service.yml`). It has three states:
+
+    CLOSED --(50 % of the last calls fail)--> OPEN --(after 10 s)--> HALF_OPEN --(3 test calls succeed)--> CLOSED
+                                                                          |
+                                                          (a test call fails) --> OPEN again
+
+| State | What happens |
+|---|---|
+| `CLOSED` | Normal. Each result is recorded in a window of the last 10 calls (evaluated from the 5th call). |
+| `OPEN` | Calls are refused immediately (`CallNotPermittedException`): `event-service` is not contacted, booking answers 503 in a few milliseconds. |
+| `HALF_OPEN` | After 10 s, 3 test calls are let through. If they succeed the circuit closes, otherwise it opens again. |
+
+Choices worth knowing:
+- **A 404 or 400 from event-service is not a failure** (`ignoreExceptions`): an unknown event is a valid answer
+  of a healthy service and must never open the circuit.
+- **No fallback that invents data.** When the circuit is open, booking answers 503: it never guesses an event, a
+  price or a number of seats.
+- **The time limiter is set to 4 s, above the 3 s Feign read timeout.** Spring Cloud Circuit Breaker's default is 1 s,
+  which would cut healthy calls before the Feign timeout.
+- The thresholds are in `EventServiceResilienceProperties` (`ticketflow.resilience.event-service.*`) and can be
+  changed without touching the code, for example from the Config Server (`booking-service.yml`).
+  **Restart booking-service after a change**: the circuit breaker is built once, at startup, from these values, so
+  `POST /actuator/refresh` re-reads them but does not rebuild the circuit breaker that already exists.
+- No retry yet: replaying a call is only safe for idempotent requests, which comes with the idempotency step.
 
 ## Run
 ```bash
@@ -123,6 +152,19 @@ answer is almost immediate; a service that is up but too slow is cut off after t
 (`EventClientContractTest` checks this). Restart `event-service` and booking works again. The events live in
 `event-service`'s PostgreSQL database, so they are still there after the restart.
 
+**5 bis. Watch the circuit open and close**
+
+With `event-service` still stopped, book about ten times in a row:
+```bash
+for i in $(seq 1 10); do
+  curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" -X POST localhost:8083/api/bookings \
+    -H 'Content-Type: application/json' -d '{"eventId":1,"customerId":42,"quantity":1}'
+done
+```
+All answers are **503**. From the 6th call on, the circuit is `OPEN`: the log shows `CallNotPermittedException` and the
+time drops to a few milliseconds. Restart `event-service`, wait 10 s: the next calls are the HALF_OPEN test calls, and
+after 3 successes bookings answer **201** again. `ResilienceTest` plays this scenario automatically.
+
 **6. Through Eureka and the gateway (optional)**
 
 Start `discovery-server` (8761) and `api-gateway` (8080), remove `EVENT_SERVICE_URL`, wait about 30 s for the
@@ -136,6 +178,8 @@ resolved by Eureka, which the automated tests do not cover.
 - `BookingApiTest`: booking rules, seat counting, concurrency (event-service mocked).
 - `EventClientContractTest`: a fake `event-service` on a random port and the **real** Feign client: contract, 404,
   read timeout, and the end-to-end booking.
+- `ResilienceTest`: a fake `event-service` that goes down and comes back; checks that the circuit opens (the fake
+  receives no more requests), that it closes again after the recovery, and that a 404 never opens it.
 - `BookingTest`: the booking domain object.
 
 ## Exercises
@@ -143,3 +187,6 @@ resolved by Eureka, which the automated tests do not cover.
 2. Make `EventView` stricter (remove `@JsonIgnoreProperties`) and add a field to `EventResponse`: what breaks, and where?
 3. Replace the atomic `UPDATE` by "count, then insert" and run `concurrentBookingsOfTheLastSeatsCannotOversell`.
 4. Add `?status=PENDING` to `GET /api/bookings`.
+5. Lower `failure-rate-threshold` to 20 and `minimum-number-of-calls` to 3 (`ticketflow.resilience.event-service.*`):
+   how does the behaviour of `ResilienceTest` change, and what is the risk in production?
+6. Remove the `ignoreExceptions` of `ResilienceConfig` and run `anUnknownEventIsABusinessAnswerAndNeverOpensTheCircuit`.

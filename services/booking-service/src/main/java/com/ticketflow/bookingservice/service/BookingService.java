@@ -12,6 +12,7 @@ import feign.FeignException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -86,14 +87,23 @@ public class BookingService {
                 : bookings.findByCustomerIdOrderByCreatedAtDescIdDesc(customerId);
     }
 
+    /**
+     * Reads the event. Business answers keep their meaning (unknown event = 404); everything else
+     * (timeout, connection refused, 5xx, open circuit) means "event-service is not usable now" = 503.
+     */
     private EventView fetchEvent(Long eventId) {
         try {
             return events.get(eventId);
-        } catch (FeignException e) {
-            if (e.status() == 404) {
+        } catch (RuntimeException e) {
+            // The circuit breaker wraps the original exception when there is no fallback
+            Throwable cause = (e instanceof NoFallbackAvailableException && e.getCause() != null)
+                    ? e.getCause() : e;
+            if (cause instanceof FeignException feign && feign.status() == 404) {
                 throw new ResourceNotFoundException("Event " + eventId + " not found");
             }
-            throw new UpstreamUnavailableException("event service", e);
+            // Timeout, refused connection, 5xx, or CallNotPermittedException when the circuit is OPEN
+            // (the call is then refused at once, event-service is not even contacted)
+            throw new UpstreamUnavailableException("event service", cause);
         }
     }
 }
