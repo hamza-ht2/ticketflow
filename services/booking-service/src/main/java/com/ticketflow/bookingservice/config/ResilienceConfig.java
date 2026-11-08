@@ -32,6 +32,7 @@ public class ResilienceConfig {
                 // 404 and 400 are valid answers of a healthy service (unknown event, bad request):
                 // they must never count as failures nor open the circuit.
                 .ignoreExceptions(FeignException.NotFound.class, FeignException.BadRequest.class)
+                .enableAutomaticTransitionFromOpenToHalfOpen()
                 .build();
         // The default time limit of Spring Cloud Circuit Breaker is 1 s, shorter than the Feign read
         // timeout: it would cut healthy calls. Keep it above the read timeout, so Feign fails first.
@@ -41,6 +42,7 @@ public class ResilienceConfig {
         return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
                 .circuitBreakerConfig(breaker)
                 .timeLimiterConfig(limiter)
+
                 .build());
     }
 }
