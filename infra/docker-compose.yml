@@ -1,4 +1,24 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      # Defaults are for local development. Override them in infra/.env (never committed).
+      POSTGRES_USER: ${POSTGRES_USER:-ticketflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketflow}
+    volumes:
+      # Named volume: the data survives "docker compose down" (only "down -v" deletes it)
+      - postgres-data:/var/lib/postgresql/data
+      # Creates one database per service the first time the volume is initialised
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-ticketflow}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   config-server:
     build:
       context: ..
@@ -53,10 +73,16 @@ services:
     environment:
       EUREKA_URL: http://discovery-server:8761/eureka/
       CONFIG_SERVER_URL: http://config-server:8888
+      # Inside the Compose network the database is reached by its service name
+      DB_URL: jdbc:postgresql://postgres:5432/event
+      DB_USER: ${POSTGRES_USER:-ticketflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ticketflow}
     depends_on:
       discovery-server:
         condition: service_started
       config-server:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   booking-service:
@@ -69,10 +95,16 @@ services:
     environment:
       EUREKA_URL: http://discovery-server:8761/eureka/
       CONFIG_SERVER_URL: http://config-server:8888
+      # Inside the Compose network the database is reached by its service name
+      DB_URL: jdbc:postgresql://postgres:5432/booking
+      DB_USER: ${POSTGRES_USER:-ticketflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ticketflow}
     depends_on:
       discovery-server:
         condition: service_started
       config-server:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   api-gateway:
@@ -91,3 +123,6 @@ services:
         condition: service_started
       config-server:
         condition: service_healthy
+
+volumes:
+  postgres-data:

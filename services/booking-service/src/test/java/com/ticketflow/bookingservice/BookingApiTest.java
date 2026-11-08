@@ -30,18 +30,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * event-service is replaced by a mock (no Eureka, no network): what is tested here is the booking
  * logic and the seat counting. The real HTTP exchange is tested in EventClientContractTest.
+ * <p>
+ * The database is a REAL PostgreSQL started in Docker (Testcontainers), not H2: the seat counting
+ * relies on row locks and on concurrent inserts, which PostgreSQL does not handle exactly like H2.
+ * Docker must be running to execute this class.
  */
 @SpringBootTest(properties = "eureka.client.enabled=false")
 @AutoConfigureMockMvc
 class BookingApiTest {
 
-    /** Each test uses its own event id: the in-memory database is shared by the whole class. */
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:16-alpine");
+
+    static {
+        POSTGRES.start(); // stopped automatically by Testcontainers when the JVM exits
+    }
+
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+    }
+
+    /** Each test uses its own event id: the database is shared by the whole class. */
     private static final AtomicLong EVENT_IDS = new AtomicLong(1000);
 
     @Autowired

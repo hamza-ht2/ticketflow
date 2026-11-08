@@ -53,12 +53,12 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 | `step-04-event-service` | Second business service |
 | `step-05-config` | Config Server |
 | `step-06-booking-feign` | booking-service + OpenFeign (synchronous call to event-service) |
-| `step-07-persistence` | PostgreSQL per service + Flyway migrations |
-| `step-08-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
-| `step-09-security` | Keycloak, JWT, roles |
-| `step-10-catalog` | Catalog features (search, pagination) |
-| `step-11-customer-profile` | Customer profile bound to the identity |
-| `step-12-resilience` | Resilience4J |
+| `step-07-persistence` | PostgreSQL for event-service and booking-service (Docker volume, Testcontainers) |
+| `step-08-resilience` | Resilience4J: circuit breaker on the booking -> event call |
+| `step-09-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
+| `step-10-security` | Keycloak, JWT, roles |
+| `step-11-catalog` | Catalog features (search, pagination), Flyway migrations |
+| `step-12-customer-profile` | Customer profile bound to the identity |
 | `step-13-payment` | Simulated payment service |
 | `step-14-kafka` | Versioned events, outbox, DLT |
 | `step-15-saga` | Saga, idempotency |
@@ -75,7 +75,8 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 | `step-26-docs-demo` | Documentation and demo |
 
 To follow a lesson, check out its tag: `git checkout step-01-customer-service`.
-Start order with Docker Compose is handled for you: config-server, discovery-server, then the services.
+Start order with Docker Compose is handled for you: postgres and config-server, discovery-server, then the services.
+event-service and booking-service store their data in PostgreSQL (one database each, volume `postgres-data`).
 
 ## Tech stack
 
