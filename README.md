@@ -27,17 +27,17 @@ composants déjà présents des éléments planifiés et des choix restant à va
 
 ## Architecture
 
-| Module | Role | Key technology | Status |
-|---|---|---|---|
-| `customer-service` | Customer profiles (CRUD) | Spring Web, JPA | Done |
-| `api-gateway` | Single entry point, routing, rate limiting | Spring Cloud Gateway | Done |
-| `discovery-server` | Service registry | Eureka | Done |
-| `event-service` | Events catalog (create, publish, close) | Spring Web, JPA | Done |
-| `config-server` | Centralized configuration | Spring Cloud Config | Done |
-| `booking-service` | Booking and seat counting; calls `event-service` | Spring Web, JPA, OpenFeign | Done |
-| `payment-service` | Simulated payment provider (random failures) | Resilience4J | Planned |
-| `notification-service` | Confirmation emails/SMS | Kafka consumer | Planned |
-| `web-frontend` | Event catalog and customer booking journey | Angular | Planned |
+| Module | Role | Key technology                                         | Status |
+|---|---|--------------------------------------------------------|---|
+| `customer-service` | Customer profiles (CRUD) | Spring Web, JPA                                        | Done |
+| `api-gateway` | Single entry point, routing, rate limiting | Spring Cloud Gateway                                   | Done |
+| `discovery-server` | Service registry | Eureka                                                 | Done |
+| `event-service` | Events catalog (create, publish, close) | Spring Web, JPA                                        | Done |
+| `config-server` | Centralized configuration | Spring Cloud Config                                    | Done |
+| `booking-service` | Booking and seat counting; calls `event-service` | Spring Web, JPA, OpenFeign, Resillience4J              | Done |
+| `payment-service` | Simulated payment provider (random failures) | Resilience4J                                           | Planned |
+| `notification-service` | Confirmation emails/SMS | Kafka consumer                                         | Planned |
+| `web-frontend` | Event catalog and customer booking journey | Angular                                                | Planned |
 | `ai-assistant-service` | Read-only assistant via Telegram | Cloud AI provider + Telegram Bot API (to be confirmed) | Planned |
 
 ## Roadmap
