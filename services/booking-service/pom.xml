@@ -61,11 +61,10 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- A real PostgreSQL started in Docker for the concurrency tests (BookingApiTest) -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-postgresql</artifactId>
-            <scope>test</scope>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
