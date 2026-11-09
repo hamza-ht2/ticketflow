@@ -107,6 +107,28 @@ services:
       postgres:
         condition: service_healthy
 
+  payment-service:
+    build:
+      context: ..
+      dockerfile: services/payment-service/Dockerfile
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      CONFIG_SERVER_URL: http://config-server:8888
+      # Inside the Compose network the database is reached by its service name
+      DB_URL: jdbc:postgresql://postgres:5432/payment
+      DB_USER: ${POSTGRES_USER:-ticketflow}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ticketflow}
+    depends_on:
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   api-gateway:
     build:
       context: ..
