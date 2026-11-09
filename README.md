@@ -34,8 +34,8 @@ composants déjà présents des éléments planifiés et des choix restant à va
 | `discovery-server` | Service registry | Eureka                                                 | Done |
 | `event-service` | Events catalog (create, publish, close) | Spring Web, JPA                                        | Done |
 | `config-server` | Centralized configuration | Spring Cloud Config                                    | Done |
-| `booking-service` | Booking and seat counting; calls `event-service` | Spring Web, JPA, OpenFeign, Resillience4J              | Done |
-| `payment-service` | Simulated payment provider (random failures) | Resilience4J                                           | Planned |
+| `booking-service` | Booking, seat counting, payment orchestration; calls `event-service` and `payment-service` | Spring Web, JPA, OpenFeign, Resilience4J               | Done |
+| `payment-service` | Simulated payment provider (outcome driven by the card token), idempotent charge and refund | Spring Web, JPA                                        | Done |
 | `notification-service` | Confirmation emails/SMS | Kafka consumer                                         | Planned |
 | `web-frontend` | Event catalog and customer booking journey | Angular                                                | Planned |
 | `ai-assistant-service` | Read-only assistant via Telegram | Cloud AI provider + Telegram Bot API (to be confirmed) | Planned |
@@ -76,7 +76,7 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 
 To follow a lesson, check out its tag: `git checkout step-01-customer-service`.
 Start order with Docker Compose is handled for you: postgres and config-server, discovery-server, then the services.
-event-service and booking-service store their data in PostgreSQL (one database each, volume `postgres-data`).
+event-service, booking-service and payment-service (and customer-service) store their data in PostgreSQL (one database each, volume `postgres-data`).
 
 ## Tech stack
 
@@ -120,4 +120,4 @@ To be defined (MIT recommended for an educational project).
 
 ## Author
 
-**AHAIDOUS Khadija**   | [GitHub](https://github.com/kahaidous>) · [LinkedIn](https://www.linkedin.com/in/khadijaahaidous)
+**AHAIDOUS Khadija**   | [GitHub](https://github.com/kahaidous) · [LinkedIn](https://www.linkedin.com/in/khadijaahaidous)
