@@ -56,23 +56,22 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 | `step-07-persistence` | PostgreSQL for event-service and booking-service (Docker volume, Testcontainers) |
 | `step-08-resilience` | Resilience4J: circuit breaker on the booking -> event call |
 | `step-09-payment` | Simulated payment service, booking pays through it |
-| `step-10-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
-| `step-11-security` | Keycloak, JWT, roles |
-| `step-12-catalog` | Catalog features (search, pagination), Flyway migrations |
-| `step-13-customer-profile` | Customer profile bound to the identity |
-| `step-14-kafka` | Versioned events, outbox, DLT |
-| `step-15-saga` | Saga, idempotency |
+| `step-10-notification-kafka` | notification-service + first Kafka flow (payment/booking events, idempotent consumer) |
+| `step-11-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
+| `step-12-security` | Keycloak, JWT, roles |
+| `step-13-catalog` | Catalog features (search, pagination), Flyway migrations |
+| `step-14-customer-profile` | Customer profile bound to the identity |
+| `step-15-saga` | Saga, idempotency, outbox, DLT |
 | `step-16-ticket` | Ticket issuing |
-| `step-17-notification` | notification-service |
-| `step-18-observability` | Tracing and metrics |
-| `step-19-mcp-tools` | MCP tool server |
-| `step-20-assistant` | AI assistant |
-| `step-21-telegram-link` | Telegram account linking |
-| `step-22-reports` | Reports |
-| `step-23-web-catalog` | Angular catalog |
-| `step-24-web-client` | Angular customer journey |
-| `step-25-web-admin` | Angular back-office |
-| `step-26-docs-demo` | Documentation and demo |
+| `step-17-observability` | Tracing and metrics |
+| `step-18-mcp-tools` | MCP tool server |
+| `step-19-assistant` | AI assistant |
+| `step-20-telegram-link` | Telegram account linking |
+| `step-21-reports` | Reports |
+| `step-22-web-catalog` | Angular catalog |
+| `step-23-web-client` | Angular customer journey |
+| `step-24-web-admin` | Angular back-office |
+| `step-25-docs-demo` | Documentation and demo |
 
 To follow a lesson, check out its tag: `git checkout step-01-customer-service`.
 Start order with Docker Compose is handled for you: postgres and config-server, discovery-server, then the services.

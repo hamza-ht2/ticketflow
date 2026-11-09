@@ -37,7 +37,7 @@ Business rules:
 Errors follow RFC 9457 (`ProblemDetail`): 400 validation, 404 not found, 409 invalid state.
 
 > There is no security yet: `GET /api/events/{id}` also returns drafts. Access control
-> arrives in `step-10-security`.
+> arrives in `step-12-security`.
 
 ## Package layout
     controllers/   REST endpoints
