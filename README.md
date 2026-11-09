@@ -55,11 +55,11 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 | `step-06-booking-feign` | booking-service + OpenFeign (synchronous call to event-service) |
 | `step-07-persistence` | PostgreSQL for event-service and booking-service (Docker volume, Testcontainers) |
 | `step-08-resilience` | Resilience4J: circuit breaker on the booking -> event call |
-| `step-09-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
-| `step-10-security` | Keycloak, JWT, roles |
-| `step-11-catalog` | Catalog features (search, pagination), Flyway migrations |
-| `step-12-customer-profile` | Customer profile bound to the identity |
-| `step-13-payment` | Simulated payment service |
+| `step-09-payment` | Simulated payment service, booking pays through it |
+| `step-10-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
+| `step-11-security` | Keycloak, JWT, roles |
+| `step-12-catalog` | Catalog features (search, pagination), Flyway migrations |
+| `step-13-customer-profile` | Customer profile bound to the identity |
 | `step-14-kafka` | Versioned events, outbox, DLT |
 | `step-15-saga` | Saga, idempotency |
 | `step-16-ticket` | Ticket issuing |
