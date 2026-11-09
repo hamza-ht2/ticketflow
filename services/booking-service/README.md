@@ -30,17 +30,19 @@
 | POST | `/api/bookings` | Book `quantity` (1-10) seats of a PUBLISHED, not yet started event. 201 + Location, status `PENDING` |
 | GET | `/api/bookings` | All bookings, newest first. Optional `?customerId=` filter |
 | GET | `/api/bookings/{id}` | One booking |
-| POST | `/api/bookings/{id}/cancel` | Cancel and give the seats back (409 if already cancelled) |
+| GET | `/api/bookings/events/{eventId}/availability` | `capacity`, `held` (PENDING + CONFIRMED seats) and `remaining` of an event |
+| POST | `/api/bookings/{id}/pay` | Pay a `PENDING` booking (body optional `{"cardToken":"tok_success"}`). `CONFIRMED` on success, 402 + `CANCELLED` if refused, 503 + `CANCELLED` if payment-service is unavailable. Idempotent |
+| POST | `/api/bookings/{id}/cancel` | Cancel and give the seats back; a paid booking is refunded first (409 if already cancelled) |
 
 Request: `{ "eventId": 5, "customerId": 42, "quantity": 2 }`. The unit price and the event title are **copied**
 into the booking: a later price change does not alter what the customer agreed to.
 
 > **Known limits of this step.** There is no security yet: `customerId` is taken from the request and is not
 > checked against `customer-service`, and anybody can read or cancel any booking. The identity will come from the
-> token in the security step. A booking stays `PENDING` until cancelled: `CONFIRMED` comes with the payment.
+> token in the security step. A booking stays `PENDING` until it is paid (`/pay`) or cancelled.
 
 Errors (RFC 9457): 400 invalid quantity / customer / missing event, 404 unknown event or booking,
-409 sold out / event not open / event already started / already cancelled, 503 `event-service` did not answer.
+409 sold out / event not open / event already started / already cancelled / cancelled booking paid, 402 payment refused, 503 `event-service` or `payment-service` did not answer.
 
 ## Calling event-service
 `EVENT_SERVICE_URL` overrides the Eureka name: `EVENT_SERVICE_URL=http://localhost:8082` runs booking with only
@@ -73,6 +75,27 @@ Choices worth knowing:
   **Restart booking-service after a change**: the circuit breaker is built once, at startup, from these values, so
   `POST /actuator/refresh` re-reads them but does not rebuild the circuit breaker that already exists.
 - No retry yet: replaying a call is only safe for idempotent requests, which comes with the idempotency step.
+
+## Paying (payment-service)
+
+Create `PENDING` (seats held), then pay: `POST /api/bookings/{id}/pay`. booking-service calls
+`payment-service` (`POST /api/payments`, idempotent on the booking id) **outside any database transaction**.
+
+| Payment result | Booking | HTTP |
+|---|---|---|
+| `SUCCEEDED` (or free booking, total 0: no call) | `CONFIRMED`, `paymentId` set | 200 |
+| `FAILED` (declined card, insufficient funds) | `CANCELLED`, seats released | 402 |
+| timeout, 5xx, circuit `OPEN` | `CANCELLED`, seats released | 503 |
+| payment-service answers 409 (payment in progress) | stays `PENDING` | 409 |
+| booking already `CONFIRMED` | unchanged, **no second charge** | 200 |
+| booking `CANCELLED` | unchanged | 409 |
+
+Cancelling a `CONFIRMED` booking **refunds first**; if the refund fails (503) the booking stays `CONFIRMED` and the
+client retries. payment-service has its own circuit breaker (`ticketflow.resilience.payment-service.*`).
+
+Known limit (Saga step, later): after a timeout we do not know whether the money moved. The booking is cancelled so seats
+are not held forever, but a payment may exist on the other side (try `tok_slow`): a reconciliation job or the Saga
+compensation (refund by `bookingId`) closes that gap.
 
 ## Run
 ```bash

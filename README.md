@@ -34,8 +34,8 @@ composants déjà présents des éléments planifiés et des choix restant à va
 | `discovery-server` | Service registry | Eureka                                                 | Done |
 | `event-service` | Events catalog (create, publish, close) | Spring Web, JPA                                        | Done |
 | `config-server` | Centralized configuration | Spring Cloud Config                                    | Done |
-| `booking-service` | Booking and seat counting; calls `event-service` | Spring Web, JPA, OpenFeign, Resillience4J              | Done |
-| `payment-service` | Simulated payment provider (random failures) | Resilience4J                                           | Planned |
+| `booking-service` | Booking, seat counting, payment orchestration; calls `event-service` and `payment-service` | Spring Web, JPA, OpenFeign, Resilience4J               | Done |
+| `payment-service` | Simulated payment provider (outcome driven by the card token), idempotent charge and refund | Spring Web, JPA                                        | Done |
 | `notification-service` | Confirmation emails/SMS | Kafka consumer                                         | Planned |
 | `web-frontend` | Event catalog and customer booking journey | Angular                                                | Planned |
 | `ai-assistant-service` | Read-only assistant via Telegram | Cloud AI provider + Telegram Bot API (to be confirmed) | Planned |
@@ -55,28 +55,27 @@ Each step is developed on a `feature/step-XX-...` branch and frozen with a `step
 | `step-06-booking-feign` | booking-service + OpenFeign (synchronous call to event-service) |
 | `step-07-persistence` | PostgreSQL for event-service and booking-service (Docker volume, Testcontainers) |
 | `step-08-resilience` | Resilience4J: circuit breaker on the booking -> event call |
-| `step-09-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
-| `step-10-security` | Keycloak, JWT, roles |
-| `step-11-catalog` | Catalog features (search, pagination), Flyway migrations |
-| `step-12-customer-profile` | Customer profile bound to the identity |
-| `step-13-payment` | Simulated payment service |
-| `step-14-kafka` | Versioned events, outbox, DLT |
-| `step-15-saga` | Saga, idempotency |
+| `step-09-payment` | Simulated payment service, booking pays through it |
+| `step-10-notification-kafka` | notification-service + first Kafka flow (payment/booking events, idempotent consumer) |
+| `step-11-api-contract` | `/api/v1`, OpenAPI, explicit gateway routes |
+| `step-12-security` | Keycloak, JWT, roles |
+| `step-13-catalog` | Catalog features (search, pagination), Flyway migrations |
+| `step-14-customer-profile` | Customer profile bound to the identity |
+| `step-15-saga` | Saga, idempotency, outbox, DLT |
 | `step-16-ticket` | Ticket issuing |
-| `step-17-notification` | notification-service |
-| `step-18-observability` | Tracing and metrics |
-| `step-19-mcp-tools` | MCP tool server |
-| `step-20-assistant` | AI assistant |
-| `step-21-telegram-link` | Telegram account linking |
-| `step-22-reports` | Reports |
-| `step-23-web-catalog` | Angular catalog |
-| `step-24-web-client` | Angular customer journey |
-| `step-25-web-admin` | Angular back-office |
-| `step-26-docs-demo` | Documentation and demo |
+| `step-17-observability` | Tracing and metrics |
+| `step-18-mcp-tools` | MCP tool server |
+| `step-19-assistant` | AI assistant |
+| `step-20-telegram-link` | Telegram account linking |
+| `step-21-reports` | Reports |
+| `step-22-web-catalog` | Angular catalog |
+| `step-23-web-client` | Angular customer journey |
+| `step-24-web-admin` | Angular back-office |
+| `step-25-docs-demo` | Documentation and demo |
 
 To follow a lesson, check out its tag: `git checkout step-01-customer-service`.
 Start order with Docker Compose is handled for you: postgres and config-server, discovery-server, then the services.
-event-service and booking-service store their data in PostgreSQL (one database each, volume `postgres-data`).
+event-service, booking-service and payment-service (and customer-service) store their data in PostgreSQL (one database each, volume `postgres-data`).
 
 ## Tech stack
 
@@ -120,4 +119,4 @@ To be defined (MIT recommended for an educational project).
 
 ## Author
 
-**AHAIDOUS Khadija**   | [GitHub](https://github.com/kahaidous>) · [LinkedIn](https://www.linkedin.com/in/khadijaahaidous)
+**AHAIDOUS Khadija**   | [GitHub](https://github.com/kahaidous) · [LinkedIn](https://www.linkedin.com/in/khadijaahaidous)

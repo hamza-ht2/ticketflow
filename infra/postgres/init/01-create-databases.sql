@@ -3,3 +3,5 @@
 -- To replay it after changing this file: docker compose down -v (this DELETES the data).
 CREATE DATABASE event;
 CREATE DATABASE booking;
+CREATE DATABASE customer;
+CREATE DATABASE payment;

@@ -1,7 +1,9 @@
 package com.ticketflow.bookingservice.controllers;
 
+import com.ticketflow.bookingservice.dto.AvailabilityResponse;
 import com.ticketflow.bookingservice.dto.BookingRequest;
 import com.ticketflow.bookingservice.dto.BookingResponse;
+import com.ticketflow.bookingservice.dto.PayRequest;
 import com.ticketflow.bookingservice.service.BookingService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -41,6 +43,12 @@ public class BookingController {
         return service.list(customerId).stream().map(BookingResponse::from).toList();
     }
 
+    /** Seats taken (PENDING + CONFIRMED) and remaining for an event. */
+    @GetMapping("/events/{eventId}/availability")
+    AvailabilityResponse availability(@PathVariable Long eventId) {
+        return service.availability(eventId);
+    }
+
     @GetMapping("/{id}")
     BookingResponse get(@PathVariable Long id) {
         return BookingResponse.from(service.get(id));
@@ -49,5 +57,11 @@ public class BookingController {
     @PostMapping("/{id}/cancel")
     BookingResponse cancel(@PathVariable Long id) {
         return BookingResponse.from(service.cancel(id));
+    }
+
+    /** Pays a PENDING booking: CONFIRMED on success, CANCELLED (seats released) if the payment fails. */
+    @PostMapping("/{id}/pay")
+    BookingResponse pay(@PathVariable Long id, @Valid @RequestBody(required = false) PayRequest request) {
+        return BookingResponse.from(service.pay(id, request == null ? null : request.cardToken()));
     }
 }

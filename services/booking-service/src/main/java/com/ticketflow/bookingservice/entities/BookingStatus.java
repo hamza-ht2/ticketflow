@@ -1,8 +1,9 @@
 package com.ticketflow.bookingservice.entities;
 
 /**
- * PENDING: seats are held (the payment arrives in a later step). CANCELLED: seats released.
- * CONFIRMED is reserved for the payment step: nothing sets it yet.
+ * PENDING: seats are held, waiting for the payment (POST /api/bookings/{id}/pay).
+ * CONFIRMED: paid (or free), seats kept. CANCELLED: seats released (cancelled, payment refused or
+ * payment-service unavailable).
  */
 public enum BookingStatus {
     PENDING, CONFIRMED, CANCELLED;
