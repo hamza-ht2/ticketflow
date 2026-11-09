@@ -24,4 +24,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleUpstream(UpstreamUnavailableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
+
+    @ExceptionHandler(PaymentRefusedException.class)
+    ProblemDetail handleRefused(PaymentRefusedException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
+    }
 }

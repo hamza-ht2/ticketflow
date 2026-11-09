@@ -14,10 +14,11 @@ public record BookingResponse(
         BigDecimal unitPrice,
         BigDecimal totalPrice,
         BookingStatus status,
+        Long paymentId,
         Instant createdAt) {
 
     public static BookingResponse from(Booking b) {
         return new BookingResponse(b.getId(), b.getEventId(), b.getEventTitle(), b.getCustomerId(),
-                b.getQuantity(), b.getUnitPrice(), b.getTotalPrice(), b.getStatus(), b.getCreatedAt());
+                b.getQuantity(), b.getUnitPrice(), b.getTotalPrice(), b.getStatus(), b.getPaymentId(), b.getCreatedAt());
     }
 }

@@ -44,6 +44,9 @@ public class Booking {
     @Column(nullable = false, length = 20)
     private BookingStatus status = BookingStatus.PENDING;
 
+    /** Id of the payment in payment-service (no foreign key: another database). Null until paid. */
+    private Long paymentId;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -64,6 +67,15 @@ public class Booking {
         this.createdAt = createdAt;
     }
 
+    /** PENDING -> CONFIRMED, once the payment succeeded. A free booking has no payment (paymentId null). */
+    public void confirm(Long paymentId) {
+        if (status != BookingStatus.PENDING) {
+            throw new BookingRuleException("Only a pending booking can be confirmed");
+        }
+        status = BookingStatus.CONFIRMED;
+        this.paymentId = paymentId;
+    }
+
     /** PENDING or CONFIRMED -> CANCELLED. */
     public void cancel() {
         if (status == BookingStatus.CANCELLED) {
@@ -80,5 +92,6 @@ public class Booking {
     public BigDecimal getUnitPrice() { return unitPrice; }
     public BigDecimal getTotalPrice() { return totalPrice; }
     public BookingStatus getStatus() { return status; }
+    public Long getPaymentId() { return paymentId; }
     public Instant getCreatedAt() { return createdAt; }
 }
